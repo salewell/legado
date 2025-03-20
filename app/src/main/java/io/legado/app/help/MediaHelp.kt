@@ -40,6 +40,7 @@ object MediaHelp {
         val mPlaybackAttributes = AudioAttributesCompat.Builder()
             .setUsage(AudioAttributesCompat.USAGE_MEDIA)
             .setContentType(AudioAttributesCompat.CONTENT_TYPE_MUSIC)
+            .setLegacyStreamType(AudioManager.STREAM_MUSIC)
             .build()
         return AudioFocusRequestCompat.Builder(AudioManagerCompat.AUDIOFOCUS_GAIN)
             .setAudioAttributes(mPlaybackAttributes)
