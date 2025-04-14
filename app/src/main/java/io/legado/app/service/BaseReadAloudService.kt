@@ -546,44 +546,24 @@ abstract class BaseReadAloudService : BaseService(),
         var nSubtitle = ReadBook.curTextChapter?.title
         if (nSubtitle.isNullOrBlank())
             nSubtitle = getString(R.string.read_aloud_s)
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NotificationCompat
-                .Builder(this@BaseReadAloudService, AppConst.channelIdReadAloud)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-                .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
-                .setSmallIcon(R.drawable.ic_volume_up)
-                .setPriority(NotificationManager.IMPORTANCE_HIGH)
-                .setSubText(getString(R.string.read_aloud))
-                .setOngoing(true)
-                .setOnlyAlertOnce(true)
-                .setContentTitle(nTitle)
-                .setContentText(nSubtitle)
-                .setContentIntent(
-                    activityPendingIntent<ReadBookActivity>("activity")
-                )
-                .setVibrate(null)
-                .setSound(null)
-                .setLights(0, 0, 0)
-        } else {
-            NotificationCompat
-                .Builder(this@BaseReadAloudService, AppConst.channelIdReadAloud)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-                .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
-                .setSmallIcon(R.drawable.ic_volume_up)
-                .setSubText(getString(R.string.read_aloud))
-                .setOngoing(true)
-                .setOnlyAlertOnce(true)
-                .setContentTitle(nTitle)
-                .setContentText(nSubtitle)
-                .setContentIntent(
-                    activityPendingIntent<ReadBookActivity>("activity")
-                )
-                .setVibrate(null)
-                .setSound(null)
-                .setLights(0, 0, 0)
-        }
+
+        val builder = NotificationCompat
+            .Builder(this, AppConst.channelIdReadAloud)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+            .setSmallIcon(R.drawable.ic_volume_up)
+            .setSubText(getString(R.string.read_aloud))
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentTitle(nTitle)
+            .setContentText(nSubtitle)
+            .setContentIntent(
+                activityPendingIntent<ReadBookActivity>("activity")
+            )
+            .setVibrate(null)
+            .setSound(null)
+            .setLights(0, 0, 0)
         builder.setLargeIcon(cover)
         // 按钮定义：上一章、播放、停止、下一章、定时
         builder.addAction(

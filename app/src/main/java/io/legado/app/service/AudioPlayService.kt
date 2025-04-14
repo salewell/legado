@@ -209,7 +209,7 @@ class AudioPlayService : BaseService(),
     @SuppressLint("WakelockTimeout")
     private fun play() {
         if (useWakeLock) {
-            wakeLock.acquire()
+            wakeLock.acquire(24*60*60*1000)
             wifiLock?.acquire()
         }
         upAudioPlayNotification()
@@ -269,7 +269,7 @@ class AudioPlayService : BaseService(),
     @SuppressLint("WakelockTimeout")
     private fun resume() {
         if (useWakeLock) {
-            wakeLock.acquire()
+            wakeLock.acquire(24*60*60*1000)
             wifiLock?.acquire()
         }
         try {

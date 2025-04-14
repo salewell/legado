@@ -148,7 +148,7 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
             return true
         } catch (e: Throwable) {
             ReadBook.upMsg("打开本地书籍出错: ${e.localizedMessage}")
-            if (e is FileNotFoundException) {
+            if (e is SecurityException || e is FileNotFoundException) {
                 permissionDenialLiveData.postValue(0)
             }
             return false
@@ -292,7 +292,7 @@ class ReadBookViewModel(application: Application) : BaseViewModel(application) {
             }.onStart {
                 ReadBook.upMsg(context.getString(R.string.source_auto_changing))
             }.mapParallelSafe(AppConfig.threadCount) { source ->
-                val book = WebBook.preciseSearchAwait(this, source, name, author).getOrThrow()
+                val book = WebBook.preciseSearchAwait(source, name, author).getOrThrow()
                 if (book.tocUrl.isEmpty()) {
                     WebBook.getBookInfoAwait(source, book)
                 }

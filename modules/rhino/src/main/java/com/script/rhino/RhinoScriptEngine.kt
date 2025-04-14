@@ -57,9 +57,7 @@ import java.security.AccessControlException
 import java.security.AccessController
 import java.security.AllPermission
 import java.security.PrivilegedAction
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 /**
  * Implementation of `ScriptEngine` using the Mozilla Rhino
@@ -93,7 +91,6 @@ object RhinoScriptEngine : AbstractScriptEngine(), Invocable, Compilable {
         coroutineContext: CoroutineContext?
     ): Any? {
         val cx = Context.enter() as RhinoContext
-        cx.checkRecursive()
         val previousCoroutineContext = cx.coroutineContext
         if (coroutineContext != null && coroutineContext[Job] != null) {
             cx.coroutineContext = coroutineContext
@@ -102,6 +99,7 @@ object RhinoScriptEngine : AbstractScriptEngine(), Invocable, Compilable {
         cx.recursiveCount++
         val ret: Any?
         try {
+            cx.checkRecursive()
             var filename = this["javax.script.filename"] as? String
             filename = filename ?: "<Unknown source>"
             ret = cx.evaluateReader(scope, reader, filename, 1, null)
@@ -129,12 +127,12 @@ object RhinoScriptEngine : AbstractScriptEngine(), Invocable, Compilable {
     @Throws(ContinuationPending::class)
     override suspend fun evalSuspend(reader: Reader, scope: Scriptable): Any? {
         val cx = Context.enter() as RhinoContext
-        cx.checkRecursive()
         var ret: Any?
         withContext(VMBridgeReflect.contextLocal.asContextElement()) {
             cx.allowScriptRun = true
             cx.recursiveCount++
             try {
+                cx.checkRecursive()
                 var filename = this@RhinoScriptEngine["javax.script.filename"] as? String
                 filename = filename ?: "<Unknown source>"
                 val script = cx.compileReader(reader, filename, 1, null)
@@ -145,11 +143,8 @@ object RhinoScriptEngine : AbstractScriptEngine(), Invocable, Compilable {
                     while (true) {
                         try {
                             @Suppress("UNCHECKED_CAST")
-                            val suspendFunction =
-                                pending.applicationState as Function1<Continuation<Any?>, Any?>
-                            val functionResult = suspendCoroutineUninterceptedOrReturn { cout ->
-                                suspendFunction.invoke(cout)
-                            }
+                            val suspendFunction = pending.applicationState as suspend () -> Any?
+                            val functionResult = suspendFunction()
                             val continuation = pending.continuation
                             ret = cx.resumeContinuation(continuation, scope, functionResult)
                             break
