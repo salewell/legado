@@ -536,10 +536,10 @@ class AudioPlayService : BaseService(),
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                 AppLog.put("音频焦点暂时丢失并会很快再次获得,暂停播放")
-                if (!pause) {
-                    needResumeOnAudioFocusGain = true
-                    pause(false)
-                }
+//                if (!pause) {
+//                    needResumeOnAudioFocusGain = true
+//                    pause(false)
+//                }
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
