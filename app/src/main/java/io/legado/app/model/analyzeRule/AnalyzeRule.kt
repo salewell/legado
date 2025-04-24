@@ -21,6 +21,7 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.NetworkUtils
 import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.getOrPutLimit
+import io.legado.app.utils.isDataUrl
 import io.legado.app.utils.isJson
 import io.legado.app.utils.printOnDebug
 import io.legado.app.utils.splitNotBlank
@@ -31,6 +32,8 @@ import kotlinx.coroutines.withTimeout
 import org.apache.commons.text.StringEscapeUtils
 import org.jsoup.nodes.Node
 import org.mozilla.javascript.NativeObject
+import org.mozilla.javascript.Scriptable
+import java.lang.ref.WeakReference
 import java.net.URL
 import java.util.Locale
 import java.util.regex.Pattern
@@ -69,6 +72,7 @@ class AnalyzeRule(
     private val stringRuleCache = hashMapOf<String, List<SourceRule>>()
     private val regexCache = hashMapOf<String, Regex?>()
     private val scriptCache = hashMapOf<String, CompiledScript>()
+    private var topScopeRef: WeakReference<Scriptable>? = null
 
     private var coroutineContext: CoroutineContext = EmptyCoroutineContext
 
@@ -87,11 +91,6 @@ class AnalyzeRule(
         return this
     }
 
-    fun setCoroutineContext(context: CoroutineContext): AnalyzeRule {
-        coroutineContext = context.minusKey(ContinuationInterceptor)
-        return this
-    }
-
     fun setBaseUrl(baseUrl: String?): AnalyzeRule {
         baseUrl?.let {
             this.baseUrl = baseUrl
@@ -100,6 +99,9 @@ class AnalyzeRule(
     }
 
     fun setRedirectUrl(url: String): URL? {
+        if (url.isDataUrl()) {
+            return redirectUrl
+        }
         try {
             redirectUrl = URL(url)
         } catch (e: Exception) {
@@ -759,9 +761,15 @@ class AnalyzeRule(
             bindings["nextChapterUrl"] = nextChapterUrl
             bindings["rssArticle"] = rssArticle
         }
-        val scope = RhinoScriptEngine.getRuntimeScope(bindings)
-        source?.getShareScope(coroutineContext)?.let {
-            scope.prototype = it
+        val topScope = source?.getShareScope(coroutineContext) ?: topScopeRef?.get()
+        val scope = if (topScope == null) {
+            RhinoScriptEngine.getRuntimeScope(bindings).apply {
+                topScopeRef = WeakReference(prototype)
+            }
+        } else {
+            bindings.apply {
+                prototype = topScope
+            }
         }
         val script = compileScriptCache(jsStr)
         return script.eval(scope, coroutineContext)
@@ -857,6 +865,12 @@ class AnalyzeRule(
         private val evalPattern =
             Pattern.compile("@get:\\{[^}]+?\\}|\\{\\{[\\w\\W]*?\\}\\}", Pattern.CASE_INSENSITIVE)
         private val regexPattern = Pattern.compile("\\$\\d{1,2}")
+
+        fun AnalyzeRule.setCoroutineContext(context: CoroutineContext): AnalyzeRule {
+            coroutineContext = context.minusKey(ContinuationInterceptor)
+            return this
+        }
+
     }
 
 }
